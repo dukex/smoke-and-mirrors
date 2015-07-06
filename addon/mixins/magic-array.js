@@ -71,7 +71,6 @@ function computeProxiedArray() {
 }
 
 
-
 var Mixin = Ember.Mixin.create({
 
   keyForId: null,

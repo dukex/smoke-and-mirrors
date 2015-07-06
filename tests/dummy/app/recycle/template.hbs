@@ -1,0 +1,41 @@
+<header>
+    <h1>Smoke And Mirrors</h1>
+    <nav>
+      {{#link-to "index"}}Overview{{/link-to}}
+        | {{#link-to "dbmon-naive"}}DBMon - Naive{{/link-to}}
+        | {{#link-to "dbmon-occlusion-collection"}}Vertical Collection{{/link-to}}
+        | {{#link-to "infinite-scroll"}}Infinite Scroll{{/link-to}}
+    </nav>
+</header>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-7">
+          {{!- BEGIN-SNIPPET recycling-example }}
+            <div class="table-wrapper">
+              {{#recycle-collection
+                content=model.images
+                defaultHeight=350
+                alwaysUseDefaultHeight=true
+                visibleBuffer=1
+                invisibleBuffer=2
+                containerSelector=".table-wrapper"
+                lastReached="loadBelow"
+                firstReached="loadAbove"
+                keyForId="id"
+                as |item|
+                }}
+                  <div class="number-slide">
+                      <span class="text"># {{item.id}}</span>
+                  </div>
+              {{/recycle-collection}}recycle-collection}}
+            </div>
+            {{!- END-SNIPPET }}
+        </div>
+        <div class="col-sm-5">
+            <h3>DOM Recycling</h3>
+            <h4>Code for Demo</h4>
+            {{code-snippet name="recycling-example.hbs"}}
+        </div>
+    </div>
+</div>
+

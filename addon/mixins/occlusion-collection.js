@@ -71,6 +71,12 @@ export default Mixin.create({
   //TODO implement, also can we do named yield's to make this API better?
   loadingComponentClass: null,
 
+
+  /**!
+   * Used if you want to explicitly set the tagName of `OcclusionItem`s
+   */
+  itemTagName: '',
+
   //–––––––––––––– Performance Tuning
 
   /**!
@@ -372,7 +378,7 @@ export default Mixin.create({
     }
 
     var edges = this.get('_edges') || this._calculateEdges();
-    var items = this.get('content');
+    var items = this.get('__content');
 
     var currentViewportBound = edges.viewportTop + this.$().position().top;
     var currentUpperBound = edges.invisibleTop;
@@ -381,90 +387,91 @@ export default Mixin.create({
       currentUpperBound = currentViewportBound;
     }
 
-    var topViewIndex = this._findTopView(currentUpperBound, edges.viewportTop);
-    var bottomViewIndex = topViewIndex;
+    var topComponentIndex = this._findFirstRenderedComponent(currentUpperBound, edges.viewportTop);
+    var bottomComponentIndex = topComponentIndex;
     var lastIndex = get(items, 'length') - 1;
     var topVisibleSpotted = false;
 
-    while (bottomViewIndex <= lastIndex) {
+    while (bottomComponentIndex <= lastIndex) {
 
-      var component = this.childForItem(valueForIndex(items, bottomViewIndex));
+      let item = valueForIndex(items, bottomComponentIndex);
+      var component = this.childForItem(item);
 
-      var viewTop = component.$().position().top;
-      var viewBottom = viewTop + component.get('_height');
+      var componentTop = component.$().position().top;
+      var componentBottom = componentTop + component.get('_height');
 
-      // end the loop if we've reached the end of views we care about
-      if (viewTop > edges.invisibleBottom) { break; }
+      // end the loop if we've reached the end of components we care about
+      if (componentTop > edges.invisibleBottom) { break; }
 
       //above the upper invisible boundary
-      if (viewBottom < edges.invisibleTop) {
+      if (componentBottom < edges.invisibleTop) {
         component.cull();
 
         //above the upper reveal boundary
-      } else if (viewBottom < edges.visibleTop) {
+      } else if (componentBottom < edges.visibleTop) {
         component.hide();
 
         //above the upper screen boundary
-      } else if (viewBottom < edges.viewportTop) {
+      } else if (componentBottom < edges.viewportTop) {
         component.show();
-        if (bottomViewIndex === 0) {
+        if (bottomComponentIndex === 0) {
           this.sendActionOnce('firstReached', {
-            item: component.get('content'),
-            index: bottomViewIndex
+            item: item,
+            index: bottomComponentIndex
           });
         }
 
         //above the lower screen boundary
-      } else if(viewTop < edges.viewportBottom) {
+      } else if(componentTop < edges.viewportBottom) {
         component.show();
-        if (bottomViewIndex === 0) {
+        if (bottomComponentIndex === 0) {
           this.sendActionOnce('firstReached', {
-            item: component.get('content'),
-            index: bottomViewIndex
+            item: item,
+            index: bottomComponentIndex
           });
         }
-        if (bottomViewIndex === lastIndex) {
+        if (bottomComponentIndex === lastIndex) {
           this.sendActionOnce('lastReached', {
-            item: component.get('content'),
-            index: bottomViewIndex
+            item: item,
+            index: bottomComponentIndex
           });
         }
 
         if (!topVisibleSpotted) {
           topVisibleSpotted = true;
           this.set('_firstVisible', component);
-          this.set('_firstVisibleIndex', bottomViewIndex);
+          this.set('_firstVisibleIndex', bottomComponentIndex);
           this.sendActionOnce('firstVisibleChanged', {
-            item: component.get('content'),
-            index: bottomViewIndex
+            item: item,
+            index: bottomComponentIndex
           });
         }
         this.set('_lastVisible', component);
         this.sendActionOnce('lastVisibleChanged', {
-          item: component.get('content'),
-          index: bottomViewIndex
+          item: item,
+          index: bottomComponentIndex
         });
 
         //above the lower reveal boundary
-      } else if (viewTop < edges.visibleBottom) {
+      } else if (componentTop < edges.visibleBottom) {
         component.show();
-        if (bottomViewIndex === lastIndex) {
+        if (bottomComponentIndex === lastIndex) {
           this.sendActionOnce('lastReached', {
-            item: component.get('content'),
-            index: bottomViewIndex
+            item: item,
+            index: bottomComponentIndex
           });
         }
 
         //above the lower invisible boundary
-      } else { // (viewTop <= edges.invisibleBottom) {
+      } else { // (componentTop <= edges.invisibleBottom) {
         component.hide();
       }
 
-      bottomViewIndex++;
+      bottomComponentIndex++;
     }
 
-    var toCull = (items.slice(0, topViewIndex))
-      .concat(items.slice(bottomViewIndex))
+    var toCull = (items.slice(0, topComponentIndex))
+      .concat(items.slice(bottomComponentIndex))
       .map((item) => {
         return this.childForItem(item);
       });
@@ -647,7 +654,7 @@ export default Mixin.create({
 
   }),
 
-  __performViewPrepention: function(addCount) {
+  __prependComponents: function(addCount) {
 
     this.set('__isPrepending', true);
 
@@ -755,8 +762,8 @@ export default Mixin.create({
    */
   _prepareComponent: function() {
 
-    var prependFn = this.__performViewPrepention.bind(this);
-    this.set('__performViewPrepention', prependFn);
+    var prependFn = this.__prependComponents.bind(this);
+    this.set('__prependComponents', prependFn);
 
     var collectionTagName = (this.get('tagName') || '').toLowerCase();
     var itemTagName = this.get('itemTagName');

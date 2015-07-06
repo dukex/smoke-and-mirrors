@@ -1,5 +1,5 @@
 {{#each __content key=keyForId as |item|}}
-  {{#vertical-item
+  {{#wrapper-item
     defaultHeight=defaultHeight
     tagName=itemTagName
     content=item
@@ -8,8 +8,6 @@
     collection=this
     as |wrapper|
   }}
-    {{#if wrapper.contentInserted}}
-      {{yield item}}
-    {{/if}}
-  {{/vertical-item}}
+    {{yield item}}
+  {{/wrapper-item}}
 {{/each}}
